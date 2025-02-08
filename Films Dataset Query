@@ -5,13 +5,22 @@
 -----------------------------------------------------------------------------------------------------
 -- 1. Creates a list of all the different (distinct) replacement costs of the films showing the lowest replace cost.
 Select Distinct
-  Min(replacement_cost)
+Min(replacement_cost)
 From film;
 
--- 2. How many films have replacements costs in the following cost ranges;
- - a. low: 9.99 - 19.99    - b. medium: 20.00 - 24.99  - c. high: 25.00 - 29.99
+
+-- 2. Calculate the Minimum, Maximum, Average, and Sum of replacement costs of films
+Select 
+    Min(replacement_cost) As min_replacement_cost,
+    Max(replacement_cost) As max_replacement_cost,
+    Round(Avg(replacement_cost), 2) As avg_replacement_cost,
+    Sum(replacement_cost) As total_replacement_cost
+From film;
+
+-- 3. How many films have replacements costs in the following cost ranges;
+   a. low: 9.99 - 19.99    - b. medium: 20.00 - 24.99  - c. high: 25.00 - 29.99
 Select  
-  Count(*),
+Count(*),
   Case
        when replacement_cost between 9.99 and 19.99 then 'Low'
        when replacement_cost between 20.00 and 24.99 then 'Medium'
@@ -21,18 +30,136 @@ Select
 From film
 Group by overview;
 
--- 3. Creates a list of the film titles including their title, length, 
+-- 4. Creates a list of the film titles including their title, length, 
 and category name ordered descending by length showing the longest film and category. 
 Select
-  title, length, name
+title, length, name
 From film_category fc
-  Left Join Category ca
-  on fc.category_id=ca.category_id
-  inner join film fi
-  on fi.film_id=fc.film_id
+   Left Join Category ca
+   On fc.category_id=ca.category_id
+   Inner join film fi
+   On fi.film_id=fc.film_id
 Where name = 'Drama' 
-or name = 'Sports'
-order by length desc;
+Or name = 'Sports'
+Order by length desc;
+
+-- 5. Creates an overview of how many movies are in each category showing the most common category.
+Select
+title, length, name
+From film_category fc
+   Left Join Category ca
+   On fc.category_id=ca.category_id
+   Inner join film fi
+   On fi.film_id=fc.film_id
+Where name = 'Drama' 
+Or name = 'Sports'
+Order by length desc;
+
+-- 6. Shows the actor with the most movies.
+Select 
+first_name, last_name, count(*) as count
+From actor ac
+   Left join film_actor fa
+   On ac.actor_id=fa.actor_id
+   Left join film fi
+   On fi.film_id=fa.film_id
+Group by first_name, last_name
+Order by count desc;
+
+-- 7. Creates a list of movies with their length and their replacement cost 
+that are longer than the average length in each replacement cost group.
+Select 
+title, length, replacement_cost
+From film f1
+Where length > (Select avg(length)
+                From film f2
+			        	Where f1.replacement_cost=f2.replacement_cost)
+Order by length desc;
+
+-- 8. Count movies with 'Saga' in the description and title starting with 'A' or ending with 'R'
+Select 
+Count(*) As no_of_movies
+From film
+Where description Like '%Saga%'
+And (title LIKE 'A%' OR title LIKE '%R');
+
+-- 9. Create an overview of the addresses that are not associated to any customer.
+Select 
+ad.address_id, address, customer_id
+From address ad
+   Left join customer cu
+   On ad.address_id=cu.address_id
+Where customer_id is null
+
+-- 10. Lists all customers with their addresses
+Select
+Concat(first_name, ' ', last_name) AS full_name, 
+ad.address, ad.district
+From customer cu
+   Left Join address ad 
+   On cu.address_id = ad.address_id
+Order BY full_name;
+
+-- 11. Total payments made by customers from each district
+Select ad.district, 
+Sum(p.amount) As total_payments
+From payment p
+     Inner Join customer cu on p.customer_id = cu.customer_id
+     Join address ad on cu.address_id = ad.address_id
+Group by ad.district
+Order by total_payments Desc;
+
+-- 12. Shows what city has the most film sales amount.
+Select 
+city, sum(amount) as most_sales
+From city ci
+   Full outer join address ad
+   On ci.city_id=ad.city_id
+   Full outer join customer cu
+   On ad.address_id=cu.address_id
+   Full outer join payment pa
+   On cu.customer_id=pa.customer_id
+Group by city
+Order by most_sales Desc;
+
+-- 13. Creates an overview of revenue by country and city.
+Select 
+city, co.country, sum(amount) as most_sales
+From city ci
+   Full outer join address ad
+   On ci.city_id=ad.city_id
+   Full outer join customer cu
+   On ad.address_id=cu.address_id
+   Full outer join payment pa
+   On cu.customer_id=pa.customer_id
+   Full outer join country co
+   On ci.country_id=co.country_id
+Group by city, co.country
+Order by most_sales;
+
+-- 14. Shows which staff made more revenue per customer. 
+Select 
+staff_id, round(Avg(total),2)
+From  (Select customer_id, staff_id, sum(amount) as total
+       from payment p1
+       group by staff_id, customer_id
+       order by 2)
+Group by staff_id;
+
+-- 15. Shows the average daily revenue made on sundays. 
+Select 
+Round(avg(total),2)
+From  (Select Date(payment_date),
+       extract (dow from payment_date), 
+       sum(amount) as total
+       from payment 
+       where Extract (dow from payment_date)=0
+       group by Date(payment_date),
+       extract (dow from payment_date))
+
+
+
+
 
 
 
