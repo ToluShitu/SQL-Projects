@@ -1,0 +1,41 @@
+-- Analysis of a Movie Company Data
+-- This script explores various metrics related to customers, payments, films, film_category, actors and staff
+-- using advanced SQL techniques such as joins, subqueries, aggregates, and filtering.
+
+-----------------------------------------------------------------------------------------------------
+-- 1. Creates a list of all the different (distinct) replacement costs of the films showing the lowest replace cost.
+Select Distinct
+  Min(replacement_cost)
+From film;
+
+-- 2. How many films have replacements costs in the following cost ranges;
+ - a. low: 9.99 - 19.99    - b. medium: 20.00 - 24.99  - c. high: 25.00 - 29.99
+Select  
+  Count(*),
+  Case
+       when replacement_cost between 9.99 and 19.99 then 'Low'
+       when replacement_cost between 20.00 and 24.99 then 'Medium'
+       when replacement_cost between 25.00 and 29.99 then 'High'
+       else 'other'
+  End as overview
+From film
+Group by overview;
+
+-- 3. Creates a list of the film titles including their title, length, 
+and category name ordered descending by length showing the longest film and category. 
+Select
+  title, length, name
+From film_category fc
+  Left Join Category ca
+  on fc.category_id=ca.category_id
+  inner join film fi
+  on fi.film_id=fc.film_id
+Where name = 'Drama' 
+or name = 'Sports'
+order by length desc;
+
+
+
+  
+
+
